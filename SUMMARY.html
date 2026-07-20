@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Systems Assignment Summary</title>
+
+<style>
+body{
+    font-family:Arial,sans-serif;
+    margin:40px;
+    line-height:1.6;
+}
+h1,h2{
+    color:#003366;
+}
+table{
+    border-collapse:collapse;
+    width:100%;
+}
+table,th,td{
+    border:1px solid black;
+}
+th,td{
+    padding:10px;
+}
+code{
+    background:#eeeeee;
+    padding:2px 5px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>Reliable Low-Latency UDP Streaming System</h1>
+
+<h2>Overview</h2>
+
+<p>
+This project implements a real-time media streaming system over an unreliable UDP network.
+The objective is to deliver audio frames generated every 20 milliseconds while minimizing
+playout delay and maintaining reliable playback despite packet loss, delay variation,
+reordering, and duplicate packets.
+</p>
+
+<hr>
+
+<h2>System Architecture</h2>
+
+<pre>
+
+Harness Source
+      |
+      | UDP (47010)
+      |
+   Sender
+      |
+      | UDP (47001)
+      |
+   Relay (Unreliable Network)
+      |
+      | UDP (47002)
+      |
+  Receiver
+      |
+      | UDP (47020)
+      |
+Harness Player
+
+</pre>
+
+<p>
+The relay simulates an unreliable network by introducing packet loss, random delays,
+packet duplication, and packet reordering.
+</p>
+
+<hr>
+
+<h2>Sender Design</h2>
+
+<ul>
+
+<li>Receives audio frames from the harness source.</li>
+
+<li>Extracts the sequence number and payload.</li>
+
+<li>Constructs a network packet.</li>
+
+<li>Sends packets to the relay using UDP.</li>
+
+<li>The sender is designed for low latency while keeping bandwidth usage within the required limits.</li>
+
+</ul>
+
+<hr>
+
+<h2>Receiver Design</h2>
+
+<ul>
+
+<li>Receives packets from the relay.</li>
+
+<li>Stores packets according to their sequence number.</li>
+
+<li>Removes duplicate packets.</li>
+
+<li>Maintains playback timing using a jitter buffer.</li>
+
+<li>Forwards packets to the harness player every 20 milliseconds.</li>
+
+<li>If a packet is unavailable at playback time, a silence frame is transmitted instead.</li>
+
+</ul>
+
+<hr>
+
+<h2>Packet Format</h2>
+
+<table>
+
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td>Sequence Number</td>
+<td>Unique identifier for each frame</td>
+</tr>
+
+<tr>
+<td>Payload</td>
+<td>160-byte audio frame</td>
+</tr>
+
+</table>
+
+<hr>
+
+<h2>Design Choices</h2>
+
+<ul>
+
+<li>UDP is used because it provides low transmission latency.</li>
+
+<li>Sequence numbers enable ordered playback.</li>
+
+<li>Duplicate packets are discarded to prevent repeated playback.</li>
+
+<li>A jitter buffer smooths packet arrival variations.</li>
+
+<li>Missing packets are replaced with silence to maintain continuous playback.</li>
+
+<li>The implementation prioritizes real-time performance over perfect reliability.</li>
+
+</ul>
+
+<hr>
+
+<h2>Trade-Offs</h2>
+
+<table>
+
+<tr>
+<th>Higher Delay</th>
+<th>Lower Delay</th>
+</tr>
+
+<tr>
+<td>Fewer missed packets</td>
+<td>Lower latency</td>
+</tr>
+
+<tr>
+<td>Larger jitter buffer</td>
+<td>Greater risk of deadline misses</td>
+</tr>
+
+<tr>
+<td>More stable playback</td>
+<td>Better responsiveness</td>
+</tr>
+
+</table>
+
+<hr>
+
+<h2>System-Level Operation</h2>
+
+<p>
+
+The source generates one audio frame every 20 milliseconds.
+The sender immediately forwards each frame to the relay using UDP.
+The relay introduces network impairments including delay, packet loss,
+duplication, and reordering.
+The receiver stores incoming packets inside a buffer indexed by sequence number.
+At fixed 20-millisecond intervals, the receiver retrieves the expected frame and
+forwards it to the harness player. If the expected frame has not arrived before
+its playback deadline, the receiver transmits a silence frame instead. This
+approach preserves continuous playback while minimizing interruptions caused by
+network instability.
+
+</p>
+
+<hr>
+
+<h2>Conclusion</h2>
+
+<p>
+
+This project demonstrates a lightweight real-time transport system capable of
+handling unreliable network conditions using UDP communication, packet ordering,
+duplicate suppression, and jitter buffering. The overall design balances latency,
+bandwidth consumption, and playback reliability while satisfying the assignment's
+requirements.
+
+</p>
+
+</body>
+</html>
